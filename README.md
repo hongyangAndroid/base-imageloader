@@ -13,10 +13,11 @@ Android本地、网络图片加载库。
 
 ##相关情况
 
-* 支持LIFO
-* 支持硬盘缓存
-* 硬盘缓存使用[base-diskcache](https://github.com/hongyangAndroid/base-diskcache)
-* http请求模块提取的volley的http模块
+* 支持LIFO，FIFO 加载图片策略
+* 支持内存缓存、硬盘缓存
+* 支持网络图片加载
+* 支持本地图片加载
+* 支持file、drawable、assets、content等Schema图片的加载
 
 ##TODO
 
