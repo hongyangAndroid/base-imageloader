@@ -2,12 +2,9 @@ package com.zhy.base.imageloader;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Handler;
-import android.os.Message;
-import android.os.Process;
-import android.widget.ImageView;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 
@@ -17,118 +14,67 @@ import java.util.concurrent.BlockingQueue;
 public class LocalDispatcher extends Dispatcher
 {
 
-    private Handler mUiHandler;
-
     private ImageDecorder mImageDecorder;
 
-
-    public LocalDispatcher(Context context, Handler uiHandler, BlockingQueue<ImageRequest> cacheQueue)
+    public LocalDispatcher(Context context, Handler uiHandler,
+                           BlockingQueue<ImageRequest> cacheQueue)
     {
-        super(context, cacheQueue);
-        mUiHandler = uiHandler;
+        super(context, cacheQueue, uiHandler,
+                ImageLoader.MSG_LOCAL_GET_SUCCESS,
+                ImageLoader.MSG_LOCAL_GET_ERROR);
         mImageDecorder = new ImageDecorder(context);
     }
 
-    /**
-     * 根据图片需要显示的宽和高对图片进行压缩
-     *
-     * @param path
-     * @param width
-     * @param height
-     * @return
-     */
-    protected Bitmap decodeSampledBitmapFromPath(String path, int width,
-                                                 int height)
-    {
-        // 获得图片的宽和高，并不把图片加载到内存中
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(path, options);
-
-        options.inSampleSize = caculateInSampleSize(options,
-                width, height);
-
-        // 使用获得到的InSampleSize再次解析图片
-        options.inJustDecodeBounds = false;
-        Bitmap bitmap = BitmapFactory.decodeFile(path, options);
-        return bitmap;
-    }
-
-    /**
-     * 根据需求的宽和高以及图片实际的宽和高计算SampleSize
-     */
-    public int caculateInSampleSize(BitmapFactory.Options options, int reqWidth,
-                                    int reqHeight)
-    {
-        int width = options.outWidth;
-        int height = options.outHeight;
-
-        int inSampleSize = 1;
-
-        if (width > reqWidth || height > reqHeight)
-        {
-            int widthRadio = Math.round(width * 1.0f / reqWidth);
-            int heightRadio = Math.round(height * 1.0f / reqHeight);
-
-            inSampleSize = Math.max(widthRadio, heightRadio);
-        }
-
-        return inSampleSize;
-    }
 
     @Override
-    public void run()
+    protected void dealRequest(ImageRequest request)
     {
-        Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-        while (true)
+        Bitmap bitmap = null;
+        String imageUrl = request.getUrl();
+        Scheme scheme = Scheme.ofUri(imageUrl);
+        // 如果schema属于unknown，检测是否属于文件
+        if (scheme == Scheme.UNKNOWN)
+        {
+            bitmap = tryToGetBitmapFromSDCard(request);
+        } else
         {
             try
             {
-                ImageRequest request = mQueue.take();
-                if (request.checkTaskNotActual()) continue;
-                String path = Scheme.FILE.wrap( request.getUrl());
-                L.e(ImageLoader.TAG, "local dispatcher path : " + path);
-                Bitmap bitmap = null ;
-                try
-                {
-                    bitmap =  mImageDecorder.decode(buildDecodeParams(request));
-                } catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
-                Message msg = null;
-                if (bitmap != null)
-                {
-                    request.setBitmap(bitmap);
-                    msg = Message.obtain(null, ImageLoader.MSG_LOCAL_GET_SUCCESS);
-                } else
-                {
-                    msg = Message.obtain(null, ImageLoader.MSG_LOCAL_GET_ERROR);
-                }
-                msg.obj = request;
-                mUiHandler.sendMessage(msg);
-            } catch (InterruptedException e)
+                bitmap = mImageDecorder.decode(buildDecodeParams(request));
+            } catch (IOException e)
             {
-                //如果要求退出则退出，否则遇到异常继续
-                if (mQuit) return;
-                else continue;
+                e.printStackTrace();
+                L.w("local dispatcher :" + imageUrl + " can not decode to a bitmap.");
             }
         }
+        request.setBitmap(bitmap);
+        if (bitmap == null)
+        {
+            sendErrorMsg(request);
+        }
+        sendSuccessMsg(request);
+
     }
 
-    /**
-     * 根据ImageRequest构造decode需要的参数
-     *
-     * @param request
-     * @return
-     */
-    private ImageDecorder.ImageDecorderParams buildDecodeParams(ImageRequest request)
+    private Bitmap tryToGetBitmapFromSDCard(ImageRequest request)
     {
-        ImageDecorder.ImageDecorderParams params = new ImageDecorder.ImageDecorderParams();
-        params.imageView = (ImageView) request.getTarget();
-        params.orginSize = request.getExpectSize();
-        params.url = request.getUrl();
-        return params;
+        Bitmap bitmap = null;
+        String imageUrl = request.getUrl();
+        File f = new File(imageUrl);
+        if (f.exists() && f.length() > 0)
+        {
+            // 尝试以文件形式读取
+            try
+            {
+                bitmap = mImageDecorder
+                        .decode(buildFileDecodeParams(request));
+            } catch (IOException e)
+            {
+                e.printStackTrace();
+                L.w("local dispatcher :" + imageUrl + " is a right path on sdcard , but maybe not a picture.");
+            }
+        }
+        return bitmap;
     }
 
 

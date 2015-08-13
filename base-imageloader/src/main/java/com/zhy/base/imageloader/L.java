@@ -4,8 +4,6 @@ import android.util.Log;
 
 /**
  * Log统一管理类
- * 
- *
  */
 public class L
 {
@@ -30,6 +28,12 @@ public class L
 	{
 		if (isDebug)
 			Log.d(TAG, msg);
+	}
+
+	public static void w(String msg)
+	{
+		if (isDebug)
+			Log.w(TAG, msg);
 	}
 
 	public static void e(String msg)
@@ -62,6 +66,13 @@ public class L
 		if (isDebug)
 			Log.i(tag, msg);
 	}
+
+	public static void w(String tag, String msg)
+	{
+		if (isDebug)
+			Log.w(tag, msg);
+	}
+
 
 	public static void v(String tag, String msg)
 	{

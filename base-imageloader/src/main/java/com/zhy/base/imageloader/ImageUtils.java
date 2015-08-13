@@ -43,6 +43,35 @@ public class ImageUtils
             this.width = width;
             this.height = height;
         }
+
+        @Override
+        public String toString()
+        {
+            return "ImageSize{" +
+                    "width=" + width +
+                    ", height=" + height +
+                    '}';
+        }
+    }
+
+    public static int calculateInSampleSize(ImageSize srcSize, ImageSize targetSize)
+    {
+        // 源图片的宽度
+        int width = srcSize.width;
+        int height = srcSize.height;
+        int inSampleSize = 1;
+
+        int reqWidth = targetSize.width;
+        int reqHeight = targetSize.height;
+
+        if (width > reqWidth && height > reqHeight)
+        {
+            // 计算出实际宽度和目标宽度的比率
+            int widthRatio = Math.round((float) width / (float) reqWidth);
+            int heightRatio = Math.round((float) height / (float) reqHeight);
+            inSampleSize = Math.max(widthRatio, heightRatio);
+        }
+        return inSampleSize;
     }
 
     /**
@@ -57,10 +86,10 @@ public class ImageUtils
 
         int scale = 1;
 
-        if(imageView == null)
+        if (imageView == null)
         {
             scale = Math.max(srcWidth / targetWidth, srcHeight / targetHeight); // max
-        }else
+        } else
         {
             switch (imageView.getScaleType())
             {
@@ -74,7 +103,7 @@ public class ImageUtils
                 case CENTER:
                 case CENTER_CROP:
                 case MATRIX:
-                    scale = Math.min(srcWidth / targetWidth, srcHeight / targetHeight); // min
+                    scale = Math.max(srcWidth / targetWidth, srcHeight / targetHeight); // min
                     break;
                 default:
                     scale = Math.max(srcWidth / targetWidth, srcHeight / targetHeight); // max

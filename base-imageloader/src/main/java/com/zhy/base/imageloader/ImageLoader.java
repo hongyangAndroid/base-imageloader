@@ -124,22 +124,22 @@ public class ImageLoader
         //初始化CacheDispatcher
         if(mType==Type.LIFO)
         {
-            mCacheQueue = new LIFOLinkedBlockingDeque<>();
+            mCacheQueue = new LIFOLinkedBlockingDeque<ImageRequest>();
         }else {
-            mCacheQueue = new LinkedBlockingQueue<>();
+            mCacheQueue = new LinkedBlockingQueue<ImageRequest>();
         }
         mCacheDispatcher = new CacheDispatcher(context, HANDLER, mCacheQueue, mDiskLruCacheHelper);
         //初始化NetworkDispatcher
-        mNetworkQueue = new LinkedBlockingQueue<>();
+        mNetworkQueue = new LinkedBlockingQueue<ImageRequest>();
         mNetworkDispatcher = new NetworkDispatcher(context, HANDLER, mNetworkQueue, mDiskLruCacheHelper);
 
         //初始化LocalDispatcher
         //初始化CacheDispatcher
         if(mType==Type.LIFO)
         {
-            mLocalQueue = new LIFOLinkedBlockingDeque<>();
+            mLocalQueue = new LIFOLinkedBlockingDeque<ImageRequest>();
         }else {
-            mLocalQueue = new LinkedBlockingQueue<>();
+            mLocalQueue = new LinkedBlockingQueue<ImageRequest>();
         }
         mLocalDispatcher = new LocalDispatcher(context, HANDLER, mLocalQueue);
 
@@ -268,7 +268,6 @@ public class ImageLoader
     public void load(final String path, final ImageView imageView)
     {
         setDefaultImageRes(imageView);
-        //L.e(TAG, "orign load :" + path);
         final ImageRequest req = buildImageRequest(path, imageView);
         final String cacheKey = req.getCacheKey();
         //记录最新的imageview -> cacheKey
@@ -276,7 +275,6 @@ public class ImageLoader
         Bitmap bitmap = mLruCache.get(cacheKey);
         if (bitmap != null)
         {
-            // L.e("get from lrcCache = " + path);
             imageView.setImageBitmap(bitmap);
             return;
         }
@@ -287,7 +285,6 @@ public class ImageLoader
             @Override
             public void run()
             {
-                L.e("put hashCode = " + imageView.hashCode() + " , url = " + path);
                 Uri uri = req.getUri();
                 String scheme = uri.getScheme();
                 if (SCHEME_HTTP.equals(scheme) || SCHEME_HTTPS.equals(scheme))

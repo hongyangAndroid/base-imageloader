@@ -33,7 +33,7 @@ public class ImageDecorder
     {
         String url;
         ImageUtils.ImageSize actualSize;
-        ImageUtils.ImageSize orginSize;
+        ImageUtils.ImageSize expectSize;
         ImageView imageView;
     }
 
@@ -59,7 +59,7 @@ public class ImageDecorder
 
     protected static final String CONTENT_CONTACTS_URI_PREFIX = "content://com.android.contacts/";
 
-    private static final String ERROR_UNSUPPORTED_SCHEME = "UIL doesn't support scheme(protocol) by default [%s]. " + "You should implement this support yourself (BaseImageDownloader.getStreamFromOtherSource(...))";
+    private static final String ERROR_UNSUPPORTED_SCHEME = "Imageloader doesn't support scheme(protocol) by default [%s]. " + "You should implement this support yourself (ImageDecorder.getStreamFromOtherSource(...))";
 
     protected final Context context;
     protected final int connectTimeout;
@@ -88,6 +88,7 @@ public class ImageDecorder
         //重置流，企图压缩
         imageStream = resetStream(imageStream, params.url);
         Bitmap bitmap = decodeBitmap(imageStream, params);
+
 
         return bitmap;
     }
@@ -123,7 +124,8 @@ public class ImageDecorder
         {
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inJustDecodeBounds = false;
-            options.inSampleSize = ImageUtils.computeImageSampleSize(params.orginSize, params.orginSize, params.imageView);
+            options.inSampleSize = ImageUtils.calculateInSampleSize(params.actualSize, params.expectSize);
+            L.e("inSampleSize =" + options.inSampleSize + " ," + params.actualSize + " , " + params.expectSize + " , url = " + params.url);
             bitmap = BitmapFactory.decodeStream(imageStream, null, options);
         } finally
         {

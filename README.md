@@ -3,7 +3,9 @@ Android本地、网络图片加载库。
 
 下载直接将base-imageloader以module方式引入。
 
-##使用
+## 使用
+
+下载[jar](jar/imageloader.jar)，导入项目。
 
 任何需要的地方调用以下代码
 
